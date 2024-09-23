@@ -3,6 +3,17 @@ This library can discover and export Icon files from icon sources (DLL, EXE).
 
 ## Quick Use
 Double click on the jar file to execute, or run the `java -jar iconexplorer.jar`. The GUI will open. You can open any file, or a directory to explore through the file menu.
+You can export all the icons, and specify a pattern for file name output:
+
+```
+{f} | {filename} - name of the file that was opened (user32.dll for ex)
+{r} | {resourceid} - resource id of the icon group
+{b} | {bpp} - density of the image bits per pixel (1, 4, 8, 16, 24, 32)
+{w} | {width} - width of the image in pixels
+{h} | {height} - height of the image in pixels
+```
+A pattern like `{f}\{r}\{w}x{h}-{b}bpp.png` would create images in 2 level folders: user32.dll\101\32x32-4bpp.png
+
 
 ![Icon Explorer Screen Shot](https://fatihirmak.dev/media/public/image/iconexplorer.png)
 
