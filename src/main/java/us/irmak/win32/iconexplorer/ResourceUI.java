@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -60,12 +61,12 @@ public class ResourceUI {
 	private File lastOpenFolder;
 	private File lastExportFolder;
 	private File currentDiscoveryFolder;
-	private JMenuItem menuItemOpenFolder;
 	private JTable table;
 	private DefaultTableModel tableModel;
 	private JMenu mnRecents;
 	private Stack<File> recentFiles = new Stack<>();
 	
+	private static final BufferedImage FOLDER_ICON = Util.getFolderShellIcon();;
 	/**
 	 * Launch the application.
 	 */
@@ -106,7 +107,7 @@ public class ResourceUI {
 		JMenu mnNewMenu = new JMenu("File");
 		menuBar.add(mnNewMenu);
 		
-		menuItemOpen = new JMenuItem("Open File");
+		menuItemOpen = new JMenuItem("Open");
 		
 		menuItemOpen.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -116,11 +117,19 @@ public class ResourceUI {
 				}
 				chooser.addChoosableFileFilter(new FileNameExtensionFilter("Resources (*.exe, *.dll)", "exe", "dll"));
 				chooser.addChoosableFileFilter(new FileNameExtensionFilter("Icon Files (*.ico)", "ico"));
+				chooser.addChoosableFileFilter(chooser.getAcceptAllFileFilter());
+				chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 				chooser.setAcceptAllFileFilterUsed(true);
+				
 				chooser.setMultiSelectionEnabled(false);
 				if (chooser.showOpenDialog(frmIconExplorer) == JFileChooser.APPROVE_OPTION) {
 					lastOpenFolder = chooser.getSelectedFile().getParentFile();
-					openResource(chooser.getSelectedFile());
+					File choosen = chooser.getSelectedFile();
+					if (choosen.isDirectory()) {
+						discoverFolder(choosen);
+					} else if (choosen.isFile()) {
+						openResource(choosen);
+					}
 				}
 			}
 		});
@@ -151,24 +160,6 @@ public class ResourceUI {
 				}
 			}
 		});
-		
-		menuItemOpenFolder = new JMenuItem("Open Folder");
-		menuItemOpenFolder.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				JFileChooser chooser = new JFileChooser();
-				if (lastOpenFolder != null) {
-					chooser.setCurrentDirectory(lastOpenFolder);
-				}
-				chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-				chooser.setAcceptAllFileFilterUsed(true);
-				chooser.setMultiSelectionEnabled(false);
-				if (chooser.showOpenDialog(frmIconExplorer) == JFileChooser.APPROVE_OPTION) {
-					lastOpenFolder = chooser.getSelectedFile();
-					discoverFolder(chooser.getSelectedFile());
-				}
-			}
-		});
-		mnNewMenu.add(menuItemOpenFolder);
 		menuItemExport.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_DOWN_MASK));
 		mnNewMenu.add(menuItemExport);
 		
@@ -328,6 +319,7 @@ public class ResourceUI {
 			try (IconResource resource = new IconResource(file)) {
 				addRecentFile(file);
 				menuItemExport.setEnabled(true);
+				labelStatusBar.setIcon(new ImageIcon(Util.getShellIcon(file.getName().substring(file.getName().lastIndexOf('.')))));
 				currentFile = file;
 				progressBar.setMaximum(resource.size());
 				labelStatusBar.setText(file.getName());
@@ -364,6 +356,7 @@ public class ResourceUI {
 		scrollPane.setViewportView(table);
 		cl_statuspanel.show(statuspanel, "progress");
 		labelStatusBar.setText(folder.getAbsolutePath());
+		labelStatusBar.setIcon(new ImageIcon(FOLDER_ICON));
 		currentDiscoveryFolder = folder;
 		new Thread(() -> {
 			File[] files = folder.listFiles();

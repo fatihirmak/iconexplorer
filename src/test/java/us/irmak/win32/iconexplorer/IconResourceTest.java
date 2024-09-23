@@ -1,4 +1,4 @@
-package us.irmak.win32.iconextractor;
+package us.irmak.win32.iconexplorer;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -56,7 +56,7 @@ public class IconResourceTest {
 	}
 	
 	@Test
-	
+	@Ignore
 	public void testAll() throws FileNotFoundException {
 		try (IconResource ir = new IconResource(imageres)) {
 			Map<String, String> attributes = new HashMap<>();
@@ -92,5 +92,13 @@ public class IconResourceTest {
 			int n = widths[i];
 			System.out.println((int) Math.ceil(n / 32f) * 4);
 		}
+	}
+	
+	@Test
+	@Ignore
+	public void testShellIcon() {
+		write(Util.getShellIcon("dll"), new File("C:\\Temp\\dllicon.png"));
+		write(Util.getShellIcon("exe"), new File("C:\\Temp\\exeicon.png"));
+		write(Util.getFolderShellIcon(), new File("C:\\Temp\\foldericon.png"));
 	}
 }

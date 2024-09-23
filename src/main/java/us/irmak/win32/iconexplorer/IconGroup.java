@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import us.irmak.win32.iconexplorer.jna.GroupIconDirectory;
+import us.irmak.win32.iconexplorer.jna.User32Extension.GroupIconDirectory;
 
 public class IconGroup {
 	private List<Icon> icons;

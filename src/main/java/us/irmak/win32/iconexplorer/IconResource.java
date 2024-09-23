@@ -11,22 +11,23 @@ import java.util.stream.Collectors;
 
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
+import com.sun.jna.platform.win32.GDI32;
 import com.sun.jna.platform.win32.Kernel32;
-import com.sun.jna.platform.win32.Shell32;
 import com.sun.jna.platform.win32.WinBase.EnumResNameProc;
 import com.sun.jna.platform.win32.WinDef.HICON;
 import com.sun.jna.platform.win32.WinDef.HMODULE;
 import com.sun.jna.platform.win32.WinDef.HRSRC;
 import com.sun.jna.platform.win32.WinGDI.ICONINFO;
-
-import us.irmak.win32.iconexplorer.jna.GroupIconDirectory;
-import us.irmak.win32.iconexplorer.jna.User32Extension;
-
 import com.sun.jna.platform.win32.WinUser;
+
+import us.irmak.win32.iconexplorer.jna.Shell32Extension;
+import us.irmak.win32.iconexplorer.jna.User32Extension;
+import us.irmak.win32.iconexplorer.jna.User32Extension.GroupIconDirectory;
 
 public class IconResource implements Closeable {
 	private static final Kernel32 kernel32 = Kernel32.INSTANCE;
-	private static final Shell32 shell32 = Shell32.INSTANCE;
+	private static final Shell32Extension shell32 = Shell32Extension.INSTANCE;
+	private static final GDI32 gdi32 = GDI32.INSTANCE;
 	private static final User32Extension user32 = User32Extension.INSTANCE;
 	
 	private HMODULE hmodule;
@@ -90,13 +91,12 @@ public class IconResource implements Closeable {
 				String.format("Handle to '%s' is closed.", resourceFile.getAbsoluteFile()));
 		
 		HICON hicon = loadIconHandle(icon);
+		ICONINFO info = ImageUtils.getIconInfo(hicon);
 		try {
-			ICONINFO info = ImageUtils.getIconInfo(hicon);
 			return ImageUtils.createImage(info.hbmColor, icon.getBitCount() == 32 ? null : info.hbmMask);
-		} catch (Exception e) {
-			System.out.println(icon);
-			throw e;
 		} finally {
+			gdi32.DeleteObject(info.hbmColor);
+			gdi32.DeleteObject(info.hbmMask);
 			user32.DestroyIcon(hicon);
 		}
 		//return ImageUtils.createImage(info.hbmMask, 1);

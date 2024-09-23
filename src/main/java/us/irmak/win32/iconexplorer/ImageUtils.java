@@ -11,6 +11,7 @@ import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.GDI32;
 import com.sun.jna.platform.win32.Kernel32;
+import com.sun.jna.platform.win32.Kernel32Util;
 import com.sun.jna.platform.win32.User32;
 import com.sun.jna.platform.win32.WinDef;
 import com.sun.jna.platform.win32.WinDef.HBITMAP;
@@ -40,14 +41,14 @@ class ImageUtils {
 					width = bitmapInfo.bmiHeader.biWidth;
 					height = bitmapInfo.bmiHeader.biHeight;
 					int imageSize = bitmapInfo.bmiHeader.biSizeImage;
-					//bitCount = bitmapInfo.bmiHeader.biBitCount;
 					Memory pixels = getBitmapData(hdc, colorBitmap, bitmapInfo);
-					imageData = pixels.getIntArray(0, imageSize/4);
+					imageData = pixels.getIntArray(0, imageSize / 4);
 	        	}
 	        	if (mask != null) {
 	        		BITMAPINFO maskinfo = getBitmapInfo(hdc, mask);
 	        		Memory memory = getBitmapData(hdc, mask, maskinfo);
-	        		byte[] maskbits = memory.getByteArray(0, maskinfo.bmiHeader.biSizeImage);
+	        		byte[] maskbits;
+					maskbits = memory.getByteArray(0, maskinfo.bmiHeader.biSizeImage);
 	        		
 	        		if (colorBitmap == null) {
 	        			width = maskinfo.bmiHeader.biWidth;
@@ -130,7 +131,7 @@ class ImageUtils {
 		bitmapInfo.bmiHeader.biSize = bitmapInfo.bmiHeader.size();
 		if (gdi32.GetDIBits(hdc, hbitmap, 0, 0, Pointer.NULL, bitmapInfo,
 		        WinGDI.DIB_RGB_COLORS) == 0)
-		    throw new RuntimeException("GetDIBits failed to retrieve info with error code: " + kernel32.GetLastError());
+		    throw new RuntimeException("GetDIBits failed to retrieve info with error: " + Kernel32Util.formatMessage(kernel32.GetLastError()));
 
 		bitmapInfo.read();
 		return bitmapInfo;
@@ -143,7 +144,7 @@ class ImageUtils {
     	//bitmapInfo.bmiHeader.biBitCount = 32;
     	if (gdi32.GetDIBits(hdc, bitmapHandle, 0, bitmapInfo.bmiHeader.biHeight, memory, bitmapInfo, WinGDI.DIB_RGB_COLORS) == 0)
 			throw new RuntimeException(
-					String.format("GetDIBits failed get data with error code: %d", kernel32.GetLastError()));
+					String.format("GetDIBits failed get data with error: %s", Kernel32Util.formatMessage(kernel32.GetLastError())));
 		return memory;
     }
     

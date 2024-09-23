@@ -1,6 +1,6 @@
 package us.irmak.win32.iconexplorer;
 
-import us.irmak.win32.iconexplorer.jna.GroupIconDirectoryEntry;
+import us.irmak.win32.iconexplorer.jna.User32Extension.GroupIconDirectoryEntry;
 
 public class Icon {
 	private GroupIconDirectoryEntry entry;
