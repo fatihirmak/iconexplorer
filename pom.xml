@@ -7,6 +7,13 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
+  <distributionManagement>
+    <repository>
+      <id>github</id>
+      <name>GitHub FatihIrmak Apache Maven Packages</name>
+      <url>https://maven.pkg.github.com/fatihirmak/iconexplorer</url>
+    </repository>
+  </distributionManagement>
   <dependencies>
 	<dependency>
 		<groupId>net.java.dev.jna</groupId>
