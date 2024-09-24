@@ -1,8 +1,8 @@
 # Windows Icon Explorer
 This library can discover and export Icon files from icon sources (DLL, EXE). 
 
-## Quick Use
-Double click on the jar file to execute, or run the `java -jar iconexplorer.jar`. The GUI will open. You can open any file, or a directory to explore through the file menu.
+## Quick Use / GUI
+Double click on the [jar](https://github.com/fatihirmak/iconexplorer/releases/download/release/iconexplorer-0.0.1-SNAPSHOT-jar-with-dependencies.jar) file to execute, or run the `java -jar iconexplorer.jar`. The GUI will open. You can open any file, or a directory to explore through the file menu.
 You can export all the icons, and specify a pattern for file name output:
 
 ```
@@ -16,6 +16,10 @@ A pattern like `{f}\{r}\{w}x{h}-{b}bpp.png` would create images in 2 level folde
 
 
 ![Icon Explorer Screen Shot](https://fatihirmak.dev/media/public/image/iconexplorer.png)
+
+The GUI can also open folders to examine the files inside and check the number of icons:
+
+![Icon Explorer Screen Shot](https://fatihirmak.dev/media/public/image/icondiscovery.png)
 
 ## API
 ```java
@@ -36,9 +40,9 @@ try (IconResource resource = new IconResource(dllFile) {
 ```
 
 ## Building the library
-This library is built on top of JNA and uses Windows functions to retrieve Icon data from icon resource files. One of the
-standard WinAPI functions to extract icon from a resource file is `ExtractIcon` and `ExtractIconEx`. They can capture
-small and large sized icons (Default icon sizes are configured in Windows). However these are ancient functions that can't support
+This library is built on top of JNA and uses Windows functions to retrieve Icon data from icon resource files. 
+Standard WinAPI functions used to extract icon from a resource file are `ExtractIcon` and `ExtractIconEx`. They can capture
+small and large sized icons (System small | large icon size). However these functions that don't support
 the complex icon format which can include images with different sizes or different density (bits per pixel / bpp). Modern
 Windows icons contain images with sizes from 16px to 256px, and density from 1bit to 32bit. 
 

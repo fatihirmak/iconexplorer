@@ -16,7 +16,7 @@ public interface Shell32Extension extends Shell32 {
 	public static final int SHGFI_USEFILEATTRIBUTES = 0x000000010;
 	public static final int SHGFI_ICON = 0x000000100;
 	public static final int SHGFI_SMALLICON = 0x000000001;
-	
+	public static final int SHGFI_ICONLOCATION = 0x000001000;
 	Pointer SHGetFileInfo(String pszPath, int dwFileAttributes, SHFILEINFO psfi, int cbFileInfo, int uFlags);
 	
 	/**

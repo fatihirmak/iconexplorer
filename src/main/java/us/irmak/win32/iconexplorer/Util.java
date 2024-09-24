@@ -13,17 +13,17 @@ import com.sun.jna.platform.win32.GDI32;
 import com.sun.jna.platform.win32.Kernel32;
 import com.sun.jna.platform.win32.User32;
 import com.sun.jna.platform.win32.WinDef;
-import com.sun.jna.platform.win32.WinGDI;
-import com.sun.jna.platform.win32.WinNT;
 import com.sun.jna.platform.win32.WinDef.HICON;
 import com.sun.jna.platform.win32.WinDef.HMODULE;
 import com.sun.jna.platform.win32.WinDef.HRSRC;
+import com.sun.jna.platform.win32.WinGDI;
 import com.sun.jna.platform.win32.WinGDI.ICONINFO;
+import com.sun.jna.platform.win32.WinNT;
 import com.sun.jna.platform.win32.WinNT.HANDLE;
 
 import us.irmak.win32.iconexplorer.jna.Shell32Extension;
-import us.irmak.win32.iconexplorer.jna.User32Extension;
 import us.irmak.win32.iconexplorer.jna.Shell32Extension.SHFILEINFO;
+import us.irmak.win32.iconexplorer.jna.User32Extension;
 
 class Util {
 	private static Kernel32 kernel = Kernel32.INSTANCE;

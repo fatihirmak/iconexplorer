@@ -15,9 +15,11 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
-import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.imageio.ImageIO;
@@ -64,7 +66,7 @@ public class ResourceUI {
 	private JTable table;
 	private DefaultTableModel tableModel;
 	private JMenu mnRecents;
-	private Stack<File> recentFiles = new Stack<>();
+	private List<File> recentFiles = new ArrayList<>();
 	
 	private static final BufferedImage FOLDER_ICON = Util.getFolderShellIcon();;
 	/**
@@ -382,8 +384,10 @@ public class ResourceUI {
 	private void addRecentFile(File file) {
 		recentFiles.remove(file);
 		recentFiles.add(file);
+		
 		mnRecents.removeAll();
-		recentFiles.stream().forEach(f -> {
+		for (int i = recentFiles.size() - 1; i >= 0; i--) {
+			File f = recentFiles.get(i);
 			JMenuItem item = new JMenuItem(f.getName());
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
@@ -399,6 +403,6 @@ public class ResourceUI {
 				}
 			});
 			mnRecents.add(item);
-		});
+		};
 	}
 }
