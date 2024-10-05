@@ -15,11 +15,16 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.imageio.ImageIO;
@@ -46,8 +51,16 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 
-public class ResourceUI {
+import us.irmak.win32.iconexplorer.jna.Shlwapi;
 
+public class ResourceUI {
+	private static final String DESKTOP_INI_CONTENT = 
+			  "[.ShellClassInfo]\r\n"
+			+ "IconFile=%s\r\n"
+			+ "IconIndex=-%s\r\n"
+			+ "ConfirmFileOp=0\r\n";
+	private static final String TITLE = "Icon Explorer - %s";
+	
 	private JFrame frmIconExplorer;
 	private JPanel panel;
 	private JScrollPane scrollPane;
@@ -67,8 +80,10 @@ public class ResourceUI {
 	private DefaultTableModel tableModel;
 	private JMenu mnRecents;
 	private List<File> recentFiles = new ArrayList<>();
+	private String lastExportFormat;
 	
-	private static final BufferedImage FOLDER_ICON = Util.getFolderShellIcon();;
+	private static final BufferedImage FOLDER_ICON = Util.getFolderShellIcon();
+	private JMenuItem mntmExportSame;
 	/**
 	 * Launch the application.
 	 */
@@ -100,7 +115,7 @@ public class ResourceUI {
 	private void initialize() {
 		frmIconExplorer = new JFrame();
 		frmIconExplorer.setTitle("Icon Explorer");
-		frmIconExplorer.setBounds(100, 100, 566, 376);
+		frmIconExplorer.setBounds(100, 100, 900, 545);
 		frmIconExplorer.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
 		JMenuBar menuBar = new JMenuBar();
@@ -147,6 +162,7 @@ public class ResourceUI {
 				if (lastExportFolder != null) {
 					chooser.setCurrentDirectory(lastExportFolder);
 				}
+				chooser.setApproveButtonText("Export");
 				chooser.setDialogTitle("select folder");
 				chooser.setDialogType(JFileChooser.SAVE_DIALOG);
 				chooser.setAcceptAllFileFilterUsed(false);
@@ -155,6 +171,9 @@ public class ResourceUI {
 				if (chooser.showOpenDialog(frmIconExplorer) == JFileChooser.APPROVE_OPTION) {
 					File choosen = chooser.getSelectedFile();
 					lastExportFolder = choosen.getParentFile();
+					while (!lastExportFolder.exists() && lastExportFolder.getParentFile() != null) {
+						lastExportFolder = lastExportFolder.getParentFile();
+					}
 					if (!choosen.getName().endsWith(".png")) {
 						choosen = new File(choosen.getParent(), choosen.getName() + ".png");
 					}
@@ -164,6 +183,15 @@ public class ResourceUI {
 		});
 		menuItemExport.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_DOWN_MASK));
 		mnNewMenu.add(menuItemExport);
+		
+		mntmExportSame = new JMenuItem("Export same");
+		mntmExportSame.setEnabled(false);
+		mntmExportSame.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				export(new File(lastExportFolder, lastExportFormat));
+			}
+		});
+		mnNewMenu.add(mntmExportSame);
 		
 		mnNewMenu.addSeparator();
 		
@@ -178,6 +206,7 @@ public class ResourceUI {
 		
 		mnRecents = new JMenu("Recent Files");
 		menuBar.add(mnRecents);
+		
 		
 		JPanel statusBar = new JPanel();
 		statusBar.setBorder(new EmptyBorder(4, 4, 4, 4));
@@ -259,26 +288,70 @@ public class ResourceUI {
 		openResource(new File("C:\\Windows\\system32\\user32.dll"));
 	}
 	
+	private File getExistingParent(File file) {
+		while (file.getParentFile() != null && !file.exists()) {
+			file = file.getParentFile();
+		}
+		return file;
+	}
+	
 	private void export(File target) {
 		new Thread(() -> {
-			try (IconResource resource = new IconResource(currentFile)) {
+			try {
+				NativeIconResource resource = new NativeIconResource(currentFile);
 				menuItemExport.setEnabled(true);
 				menuItemOpen.setEnabled(false);
+				progressBar.setValue(0);
 				progressBar.setMaximum(resource.size());
 				cl_statuspanel.show(statuspanel, "progress");
 				labelStatusBar.setText("Exporting...");
+				mntmExportSame.setEnabled(true);
+				
 				AtomicInteger counter = new AtomicInteger(0);
+				
+				File original = getExistingParent(target);
+				lastExportFormat = original.toPath().relativize(target.toPath()).toString();
+
 				resource.getIconGroups().forEach(group -> {
 					group.getIcons().stream().forEach(icon -> {
+						
 						String path = target.getAbsolutePath();
-						path = path.replaceAll("\\{f\\}|\\{filename\\}", currentFile.getName());
-						path = path.replaceAll("\\{r\\}|\\{resourceid\\}", String.valueOf(group.getResourceName()));
-						path = path.replaceAll("\\{b\\}|\\{bpp\\}", String.valueOf(icon.getBitCount()));
-						path = path.replaceAll("\\{w\\}|\\{width\\}", String.valueOf(icon.getWidth()));
-						path = path.replaceAll("\\{h\\}|\\{height\\}", String.valueOf(icon.getHeight()));
+						path = path.replaceAll("\\{f\\}", currentFile.getName());
+						path = path.replaceAll("\\{r\\}", String.valueOf(group.getResourceName()));
+						path = path.replaceAll("\\{b\\}", String.valueOf(icon.getBitCount()));
+						path = path.replaceAll("\\{w\\}", String.valueOf(icon.getWidth()));
+						path = path.replaceAll("\\{h\\}", String.valueOf(icon.getHeight()));
 						
 						File location = new File(path);
 						location.getParentFile().mkdirs();
+						
+						Path parent = target.toPath().getParent().normalize();
+						int parentToCustomize = -1;
+						int count = 0;
+						while (parent != null && parent.getFileName() != null) {
+							String name = parent.getFileName().toString();
+							if (name.contains("{r}") && !name.contains("{b}")
+									 && !name.contains("{w}") && !name.contains("{h}")) {
+								parentToCustomize = count;
+							}
+							count++;
+							parent = parent.getParent();
+						}
+						File folderToCustomize = location.getParentFile();
+						if (parentToCustomize != -1) {
+							for (int i = 0; i < parentToCustomize; i++) {
+								folderToCustomize = folderToCustomize.getParentFile();
+							}
+							String resourceName = group.getResourceName();
+							Shlwapi.INSTANCE.PathMakeSystemFolder(folderToCustomize.getAbsolutePath());
+							File desktopIni = new File(folderToCustomize, "desktop.ini");
+							try {
+								String content = String.format(DESKTOP_INI_CONTENT, currentFile.getAbsolutePath(), resourceName);
+								Files.writeString(desktopIni.toPath(), content, StandardCharsets.ISO_8859_1, StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+						}
 						try {
 							BufferedImage image = resource.getImage(icon);
 							ImageIO.write(image, "png", location);
@@ -311,14 +384,23 @@ public class ResourceUI {
 	}
 	
 	private void openResource(File file) {
+		if (!file.exists()) {
+			JOptionPane.showMessageDialog(frmIconExplorer, String.format("%s doesn't exist.", file.getAbsoluteFile()), "File open error", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+		frmIconExplorer.setTitle(String.format(TITLE, file.getName()));
 		recentFiles.remove(file);
 		recentFiles.add(file);
 		panel.removeAll();
 		cl_statuspanel.show(statuspanel, "progress");
 		scrollPane.setViewportView(panel);
+		Set<Short> widths = new HashSet<>();
+		Set<Short> bpps = new HashSet<>();
 		
 		new Thread(() -> {
-			try (IconResource resource = new IconResource(file)) {
+			AtomicInteger counter = new AtomicInteger(0);
+			try {
+				NativeIconResource resource = new NativeIconResource(file);
 				addRecentFile(file);
 				menuItemExport.setEnabled(true);
 				labelStatusBar.setIcon(new ImageIcon(Util.getShellIcon(file.getName().substring(file.getName().lastIndexOf('.')))));
@@ -326,30 +408,42 @@ public class ResourceUI {
 				progressBar.setMaximum(resource.size());
 				labelStatusBar.setText(file.getName());
 				labelStatusRight.setText(resource.size() + " icons");
-				AtomicInteger counter = new AtomicInteger(0);
 				resource.getIconGroups().forEach(group -> {
 					IconGroupUI p = new IconGroupUI(resource);
 					p.setTitle(String.valueOf(group.getResourceName()));
-					group.getIcons().forEach(p::addElement);
+					group.getIcons().forEach(i -> {
+						try {
+							p.addElement(i);
+							widths.add(i.getWidth());
+							bpps.add(i.getBitCount());
+						} catch (Exception e) {
+							System.out.println(i);
+							throw e;
+						}
+					});
 					p.setAlignmentX(Component.LEFT_ALIGNMENT);
 					SwingUtilities.invokeLater(() -> {
 						panel.add(p);
 						progressBar.setValue(counter.incrementAndGet());
-						scrollPane.revalidate();
-						scrollPane.repaint();
-						if (counter.get() == resource.size()) {
-							cl_statuspanel.show(statuspanel, "status");
-						}
 					});
 				});
 			} catch (FileNotFoundException e) {
 				JOptionPane.showMessageDialog(frmIconExplorer, e.getMessage(), "File open error", JOptionPane.ERROR_MESSAGE);
 			}
+			SwingUtilities.invokeLater(() -> {
+				scrollPane.revalidate();
+				scrollPane.repaint();
+				cl_statuspanel.show(statuspanel, "status");
+			});
 		}).start();
 			
 	}
 	
 	private void discoverFolder(File folder) {
+		if (folder.equals(currentDiscoveryFolder)) {
+			scrollPane.setViewportView(table);
+			return;
+		}
 		addRecentFile(folder);
 		int rowCount = tableModel.getRowCount();
 		for (int i = rowCount - 1; i >= 0; i--) {
@@ -359,17 +453,31 @@ public class ResourceUI {
 		cl_statuspanel.show(statuspanel, "progress");
 		labelStatusBar.setText(folder.getAbsolutePath());
 		labelStatusBar.setIcon(new ImageIcon(FOLDER_ICON));
+		progressBar.setValue(0);
 		currentDiscoveryFolder = folder;
 		new Thread(() -> {
-			File[] files = folder.listFiles();
+			File[] files = folder.listFiles(file -> file.isFile() && file.canRead() && NativeIconResource.isPEFormat(file));
 			progressBar.setMaximum(files.length);
 			AtomicInteger counter = new AtomicInteger(0);
 			Arrays.asList(files).stream().forEach(file -> {
 				String fileName = file.getName();
-				int count = IconResource.getIconCount(file);
-				if (count > 0) {
+				//int count = WinIconResource.getIconCount(file);
+				int count = 0;
+				boolean exception = false;
+				long start = System.currentTimeMillis();
+				try {
+					count = new NativeIconResource(file).getIconGroups().size();
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+					fileName += " - " + e.getMessage();
+					exception = true;
+				}
+				System.out.format("%s -> %d\n", fileName, System.currentTimeMillis()-start);
+				if (count > 0 || exception) {
+					int c = count;
+					String name = fileName;
 					SwingUtilities.invokeLater(() -> {
-						tableModel.addRow(new Object[]{fileName, count});
+						tableModel.addRow(new Object[]{name, c});
 					});
 				}
 				progressBar.setValue(counter.incrementAndGet());

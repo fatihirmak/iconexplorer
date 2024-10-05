@@ -1,31 +1,19 @@
 package us.irmak.win32.iconexplorer;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
-import us.irmak.win32.iconexplorer.jna.User32Extension.GroupIconDirectory;
-
-public class IconGroup {
-	private List<Icon> icons;
-	private GroupIconDirectory directory;
+public abstract class IconGroup {
 	private short resourceName;
 	
-	IconGroup(short resourceName, GroupIconDirectory directory) {
-		this.directory = directory;
+	IconGroup(short resourceName) {
 		this.resourceName = resourceName;
-		icons = Arrays.asList(directory.idEntries).stream().map(e -> new Icon(e, resourceName)).collect(Collectors.toList());
 	}
 	
-	public List<Icon> getIcons() {
-		return icons;
-	}
+	public abstract List<Icon> getIcons();
 	
-	public short getType() {
-		return directory.idType.shortValue();
-	}
+	public abstract  short getType();
 	
-	public short getResourceName() {
-		return resourceName;
+	public String getResourceName() {
+		return String.valueOf(resourceName & 0xFFFF);
 	}
 }

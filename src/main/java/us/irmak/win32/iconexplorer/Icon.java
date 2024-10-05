@@ -1,44 +1,26 @@
 package us.irmak.win32.iconexplorer;
 
-import us.irmak.win32.iconexplorer.jna.User32Extension.GroupIconDirectoryEntry;
-
-public class Icon {
-	private GroupIconDirectoryEntry entry;
+public abstract class Icon {
 	private short resourceName;
 	
-	Icon(GroupIconDirectoryEntry entry, short resourceName) {
-		this.entry = entry;
+	Icon(short resourceName) {
 		this.resourceName = resourceName;
 	}
 
-	public short getWidth() {
-		short width = entry.bWidth.shortValue();
-		return width == 0 ? 256 : width;
-	}
+	public abstract short getWidth();
 
-	public short getHeight() {
-		short height = entry.bHeight.shortValue();
-		return height == 0 ? 256 : height;
-	}
+	public abstract short getHeight();
 
-	public short getColorCount() {
-		return entry.bColorCount.shortValue();
-	}
+	public abstract short getColorCount();
 
-	public short getPlanes() {
-		return entry.wPlanes.shortValue();
-	}
+	public abstract short getPlanes();
 
-	public short getBitCount() {
-		return entry.wBitCount.shortValue();
-	}
+	public abstract short getBitCount();
 
-	public int getSize() {
-		return entry.dwBytesInRes.intValue();
-	}
+	public abstract int getSize();
 
 	public int getResourceId() {
-		return entry.nId.intValue();
+		return resourceName & 0xFFFF;
 	}
 	
 	@Override

@@ -6,11 +6,11 @@ Double click on the [jar](https://github.com/fatihirmak/iconexplorer/releases/do
 You can export all the icons, and specify a pattern for file name output:
 
 ```
-{f} | {filename} - name of the file that was opened (user32.dll for ex)
-{r} | {resourceid} - resource id of the icon group
-{b} | {bpp} - density of the image bits per pixel (1, 4, 8, 16, 24, 32)
-{w} | {width} - width of the image in pixels
-{h} | {height} - height of the image in pixels
+{f} - filename: name of the file that was opened (user32.dll for ex)
+{r} - resourceid: resource id of the icon group
+{b} - bpp: density of the image bits per pixel (1, 4, 8, 16, 24, 32)
+{w} - width: width of the image in pixels
+{h} - height:  height of the image in pixels
 ```
 A pattern like `{f}\{r}\{w}x{h}-{b}bpp.png` would create images in 2 level folders: user32.dll\101\32x32-4bpp.png
 

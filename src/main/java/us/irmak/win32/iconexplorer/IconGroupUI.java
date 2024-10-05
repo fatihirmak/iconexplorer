@@ -27,6 +27,7 @@ public class IconGroupUI extends JPanel {
 	
 	public void addElement(Icon icon) {
 		BufferedImage image = resource.getImage(icon);
+
 		String text = String.format("%dx%d %dbpp", icon.getWidth(), icon.getHeight(), icon.getBitCount());
 		JLabel label = new JLabel(text, new ImageIcon(image), JLabel.CENTER);
 		label.setVerticalTextPosition(JLabel.BOTTOM);

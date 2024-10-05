@@ -1,0 +1,13 @@
+package us.irmak.win32.iconexplorer.pe;
+
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+@Retention(RUNTIME)
+@Target(TYPE)
+public @interface FieldOrder {
+	String[] value();
+}

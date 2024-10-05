@@ -23,6 +23,7 @@ import com.sun.jna.platform.win32.WinNT.HANDLE;
 
 import us.irmak.win32.iconexplorer.jna.Shell32Extension;
 import us.irmak.win32.iconexplorer.jna.Shell32Extension.SHFILEINFO;
+import us.irmak.win32.iconexplorer.jna.Shell32Extension.SHSTOCKICONINFO;
 import us.irmak.win32.iconexplorer.jna.User32Extension;
 
 class Util {
@@ -108,7 +109,10 @@ class Util {
 				fileInfo, fileInfo.size(), 
 				SHGFI_USEFILEATTRIBUTES | SHGFI_ICON | SHGFI_SMALLICON);
 
-		HICON hicon = fileInfo.hIcon;
+		return getImage(fileInfo.hIcon);
+	}
+	
+	private static BufferedImage getImage(HICON hicon) {
 		ICONINFO info = ImageUtils.getIconInfo(hicon);
 		try {
 			return ImageUtils.createImage(info.hbmColor, null);
@@ -118,5 +122,34 @@ class Util {
 			gdi32.DeleteObject(info.hbmColor);
 			user32.DestroyIcon(hicon);
 		}
+	}
+	
+	public static BufferedImage getStockIcon(int id) {
+		SHSTOCKICONINFO info = new SHSTOCKICONINFO();
+		shell32.SHGetStockIconInfo(id, SHGFI_ICON | SHGFI_SMALLICON, info);
+		return getImage(info.hIcon);
+	}
+	
+	public String dumpBitmapData(byte[] bitmapData) {
+		StringBuilder builder = new StringBuilder();
+		for (int i = 0; i < bitmapData.length; i++) {
+			builder.append(String.format("%02X", bitmapData[i] & 0xFF));
+			if (i % 4 == 3) {
+				builder.append("\n");
+			}
+		}
+		return builder.toString();
+	}
+	
+	public String dumpBitmapData(int[] bitmapData) {
+		StringBuilder builder = new StringBuilder();
+		for (int i = 0; i < bitmapData.length; i++) {
+			builder.append(String.format("%02X", bitmapData[i] & 0xFF));
+			builder.append(String.format("%02X", bitmapData[i] & 0xFF00));
+			builder.append(String.format("%02X", bitmapData[i] & 0xFF0000));
+			builder.append(String.format("%02X", bitmapData[i] & 0xFF000000));
+			builder.append("\n");
+		}
+		return builder.toString();
 	}
 }

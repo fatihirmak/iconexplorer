@@ -12,9 +12,6 @@ import javax.imageio.ImageIO;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import us.irmak.win32.iconexplorer.IconGroup;
-import us.irmak.win32.iconexplorer.IconResource;
-
 public class IconResourceTest {
 	File root = new File("C:\\Windows\\system32");
 	File imageres = new File(root, "imageres.dll");
@@ -22,8 +19,8 @@ public class IconResourceTest {
 	@Test
 	@Ignore
 	public void test() throws FileNotFoundException {
-		try (IconResource ir = new IconResource(imageres)) {
-			IconGroup group = ir.getIconGroups().stream().filter(gr -> gr.getResourceName() == 5320).findFirst().orElseThrow();
+		try (WinIconResource ir = new WinIconResource(imageres)) {
+			IconGroup group = ir.getIconGroups().stream().filter(gr -> gr.getResourceName().equals("5320")).findFirst().orElseThrow();
 			group.getIcons().stream().forEach(icon -> write(ir.getImage(icon), new File(String.format("C:\\temp\\%s (%d)-%dbit-%dx%d.png", 
 				imageres.getName(), group.getResourceName(), icon.getBitCount(), icon.getWidth(), icon.getHeight()))));
 		}
@@ -58,7 +55,7 @@ public class IconResourceTest {
 	@Test
 	@Ignore
 	public void testAll() throws FileNotFoundException {
-		try (IconResource ir = new IconResource(imageres)) {
+		try (WinIconResource ir = new WinIconResource(imageres)) {
 			Map<String, String> attributes = new HashMap<>();
 			attributes.put("s", imageres.getName());
 			ir.getIconGroups().forEach(ig -> {

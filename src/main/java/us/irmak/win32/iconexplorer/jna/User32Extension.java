@@ -56,7 +56,6 @@ public interface User32Extension extends User32 {
 		
 		public GroupIconDirectoryEntry() {
 			super(W32APITypeMapper.DEFAULT);
-			System.out.println("hello");
 		}
 		
 		public GroupIconDirectoryEntry(Pointer pointer) {
