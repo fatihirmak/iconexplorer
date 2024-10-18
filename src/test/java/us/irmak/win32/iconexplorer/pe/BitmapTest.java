@@ -49,9 +49,9 @@ public class BitmapTest {
 		bitmap.setMask(mask);
 		
 		BufferedImage image = bitmap.getImage();
-		assertEquals(0xFF000000, image.getRGB(0, 0));
-		assertEquals(0xFF000001, image.getRGB(1, 0));
-		assertEquals(0x00000004, image.getRGB(0, 1));
+		assertEquals(0xFF00000c, image.getRGB(0, 0));
+		assertEquals(0xFF00000d, image.getRGB(1, 0));
+		assertEquals(0xFF000008, image.getRGB(0, 1));
 	}
 
 	@Test
@@ -63,9 +63,9 @@ public class BitmapTest {
 		bitmap.setColorTable(table);
 		
 		BufferedImage image = bitmap.getImage();
-		assertEquals(0xFF1122, image.getRGB(0, 0));
-		assertEquals(0xBBCCDD, image.getRGB(1, 0));
-		assertEquals(0xAA00EE, image.getRGB(0, 1));
-		assertEquals(0x0, image.getRGB(1, 1));
+		assertEquals(0xFF1122, image.getRGB(0, 1));
+		assertEquals(0xBBCCDD, image.getRGB(1, 1));
+		assertEquals(0xAA00EE, image.getRGB(0, 0));
+		assertEquals(0x0, image.getRGB(1, 0));
 	}
 }

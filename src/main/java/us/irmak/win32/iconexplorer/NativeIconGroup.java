@@ -31,4 +31,9 @@ public class NativeIconGroup extends IconGroup {
 	public String getResourceName() {
 		return resourceName.toString();
 	}
+	
+	@Override
+	public String toString() {
+		return getResourceName();
+	}
 }

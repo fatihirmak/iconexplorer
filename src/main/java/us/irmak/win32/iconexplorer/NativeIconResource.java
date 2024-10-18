@@ -72,14 +72,17 @@ public class NativeIconResource extends IconResource {
 			int height = icon.getHeight();
 			int bpp = header.getBitCount();
 			
-			int colors = header.getColorsUsed() == 0 ? 2 << bpp - 1 : header.getColorsUsed();
-			RGBQuad[] colorTable = new RGBQuad[colors];
-			for (int i = 0; i < colors; i++) {
-				colorTable[i] = new RGBQuad(buffer);
+			RGBQuad[] colorTable = null;
+			if (bpp <= 8) {
+				int colors = header.getColorsUsed() == 0 ? 2 << bpp - 1 : header.getColorsUsed();
+				colorTable = new RGBQuad[colors];
+				for (int i = 0; i < colors; i++) {
+					colorTable[i] = new RGBQuad(buffer);
+				}
 			}
 			
 			Bitmap bitmap = new Bitmap(buffer, width, height, bpp);
-			if (colors > 0) {
+			if (colorTable != null) {
 				bitmap.setColorTable(colorTable);
 			}
 			if (bpp < 32) {

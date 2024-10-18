@@ -2,15 +2,22 @@ package us.irmak.win32.iconexplorer;
 
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
+import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.Font;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BaseMultiResolutionImage;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -19,12 +26,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.imageio.ImageIO;
@@ -40,7 +46,9 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JTable;
+import javax.swing.JTree;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
@@ -50,6 +58,8 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 
 import us.irmak.win32.iconexplorer.jna.Shlwapi;
 
@@ -79,11 +89,24 @@ public class ResourceUI {
 	private JTable table;
 	private DefaultTableModel tableModel;
 	private JMenu mnRecents;
-	private List<File> recentFiles = new ArrayList<>();
+	private Deque<File> recentFiles = new LinkedList<>();
 	private String lastExportFormat;
 	
-	private static final BufferedImage FOLDER_ICON = Util.getFolderShellIcon();
 	private JMenuItem mntmExportSame;
+	private JSplitPane splitPane;
+	private JTree tree;
+	
+	private DefaultMutableTreeNode rootNode;
+	private DefaultTreeModel treeModel;
+	private JPanel panelPreview;
+	
+	static ImageIcon ICONS_FOLDER;
+	static ImageIcon ICONS_FILE;
+	static ImageIcon ICONS_EXPORT;
+	static ImageIcon ICONS_OPEN;
+	private static List<Image> ICONS_APP;
+	
+	private static final File windir = new File(System.getenv("windir"));
 	/**
 	 * Launch the application.
 	 */
@@ -91,10 +114,54 @@ public class ResourceUI {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					ResourceUI window = new ResourceUI();
+					File iconFile = new File(windir, "SystemResources\\imageres.dll.mun");
+					NativeIconResource resource = new NativeIconResource(iconFile);
+					MultiResolutionImageToolkit toolkit = new MultiResolutionImageToolkit(resource);
+					resource.getIconGroups().stream().filter(gr -> gr.getResourceName().equals("3")).findFirst().ifPresent(gr -> {
+						ICONS_FOLDER = new VariantImageIcon(new BaseMultiResolutionImage(toolkit.getImages(gr)), 16, 16);
+						System.out.println(gr);
+					});
+					resource.getIconGroups().stream().filter(gr -> gr.getResourceName().equals("67")).findFirst().ifPresent(gr -> {
+						ICONS_FILE = new VariantImageIcon(new BaseMultiResolutionImage(toolkit.getImages(gr)), 16, 16);
+					});
+					
+					resource.getIconGroups().stream().filter(gr -> gr.getResourceName().equals("1010")).findFirst().ifPresent(gr -> {
+						ICONS_EXPORT = new VariantImageIcon(new BaseMultiResolutionImage(toolkit.getImages(gr)), 16, 16);
+						System.out.println(gr);
+					});
+					resource.getIconGroups().stream().filter(gr -> gr.getResourceName().equals("1025")).findFirst().ifPresent(gr -> {
+						ICONS_OPEN = new VariantImageIcon(new BaseMultiResolutionImage(toolkit.getImages(gr)), 16, 16);
+					});
+					resource.getIconGroups().stream().filter(gr -> gr.getResourceName().equals("1003")).findFirst().ifPresent(gr -> {
+						ICONS_APP = Arrays.asList(toolkit.getImages(gr, 32));
+					});
+					
 					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-					SwingUtilities.updateComponentTreeUI(window.frmIconExplorer);
+					
+					GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+			        GraphicsDevice gd = ge.getDefaultScreenDevice();
+			        double scale = gd.getDefaultConfiguration().getDefaultTransform().getScaleX();
+			        System.out.println(scale);
+			        UIManager.getDefaults().keySet().stream()
+			        	.filter(key -> key instanceof String)
+			        	.map(key -> (String) key)
+			        	.filter(key -> key.endsWith(".font") && !key.contains("Menu")).forEach(key -> {
+			        	Object value = UIManager.getDefaults().get(key);
+			        	System.out.println(key);
+			        	if (value instanceof Font) {
+			        		Font font = (Font) value;
+			        		System.out.println(key + "=>" + font.getSize());
+			        		Font newFont = new Font(font.getName(), font.getStyle(), (int) (font.getSize() * scale));
+			        		//UIManager.getDefaults().put(key, newFont);
+			        	}
+			        });
+			        
+					ResourceUI window = new ResourceUI();
+					//UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+					//SwingUtilities.updateComponentTreeUI(window.frmIconExplorer);
+					window.frmIconExplorer.setIconImages(ICONS_APP);
 					window.frmIconExplorer.setVisible(true);
+					
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -113,6 +180,8 @@ public class ResourceUI {
 	 * Initialize the contents of the frame.
 	 */
 	private void initialize() {
+		
+        
 		frmIconExplorer = new JFrame();
 		frmIconExplorer.setTitle("Icon Explorer");
 		frmIconExplorer.setBounds(100, 100, 900, 545);
@@ -131,8 +200,10 @@ public class ResourceUI {
 				JFileChooser chooser = new JFileChooser();
 				if (lastOpenFolder != null) {
 					chooser.setCurrentDirectory(lastOpenFolder);
+				} else {
+					chooser.setCurrentDirectory(windir);
 				}
-				chooser.addChoosableFileFilter(new FileNameExtensionFilter("Resources (*.exe, *.dll)", "exe", "dll"));
+				chooser.addChoosableFileFilter(new FileNameExtensionFilter("Resources (*.exe, *.dll, *.mun)", "exe", "dll", "mun"));
 				chooser.addChoosableFileFilter(new FileNameExtensionFilter("Icon Files (*.ico)", "ico"));
 				chooser.addChoosableFileFilter(chooser.getAcceptAllFileFilter());
 				chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
@@ -151,11 +222,13 @@ public class ResourceUI {
 			}
 		});
 		menuItemOpen.setMnemonic('O');
+		menuItemOpen.setIcon(ICONS_OPEN);
 		menuItemOpen.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK));
 		mnNewMenu.add(menuItemOpen);
 		
 		menuItemExport = new JMenuItem("Export");
 		menuItemExport.setEnabled(false);
+		menuItemExport.setIcon(ICONS_EXPORT);
 		menuItemExport.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser chooser = new JFileChooser();
@@ -214,6 +287,7 @@ public class ResourceUI {
 		statusBar.setLayout(new GridLayout(0, 2, 5, 5));
 		
 		labelStatusBar = new JLabel("");
+		labelStatusBar.setName("left status bar");
 		statusBar.add(labelStatusBar);
 		
 		statuspanel = new JPanel();
@@ -222,6 +296,8 @@ public class ResourceUI {
 		statuspanel.setLayout(cl_statuspanel);
 		
 		labelStatusRight = new JLabel("");
+		//labelStatusRight.setFont(newFont);
+		labelStatusBar.setName("right status bar");
 		statuspanel.add(labelStatusRight, "status");
 		labelStatusRight.setHorizontalAlignment(SwingConstants.RIGHT);
 		
@@ -229,14 +305,38 @@ public class ResourceUI {
 		progressBar.setStringPainted(true);
 		statuspanel.add(progressBar, "progress");
 		
+		splitPane = new JSplitPane();
+		splitPane.setResizeWeight(0.1);
+		frmIconExplorer.getContentPane().add(splitPane, BorderLayout.CENTER);
+		
 		scrollPane = new JScrollPane();
-		frmIconExplorer.getContentPane().add(scrollPane, BorderLayout.CENTER);
+		//frmIconExplorer.getContentPane().add(scrollPane, BorderLayout.CENTER);
 		scrollPane.getVerticalScrollBar().setUnitIncrement(32);
+		splitPane.setRightComponent(scrollPane);
 		
 		panel = new JPanel();
 		scrollPane.setViewportView(panel);
 		BoxLayout layout = new BoxLayout(panel, BoxLayout.Y_AXIS);
 		panel.setLayout(layout);
+		
+		rootNode = new DefaultMutableTreeNode();
+		treeModel = new DefaultTreeModel(rootNode);
+		
+		tree = new JTree();
+		tree.setModel(treeModel);
+		
+		tree.setBorder(new EmptyBorder(0, 10, 0, 0));
+		
+		JScrollPane treeScrollPane = new JScrollPane();
+		//frmIconExplorer.getContentPane().add(scrollPane, BorderLayout.CENTER);
+		treeScrollPane.getVerticalScrollBar().setUnitIncrement(32);
+		//treeScrollPane.setViewportView(tree);
+		
+		splitPane.setLeftComponent(treeScrollPane);
+		
+		panelPreview = new JPanel();
+		panelPreview.setBackground(Color.WHITE);
+		treeScrollPane.setViewportView(panelPreview);
 		
 		table = new JTable();
 		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -314,7 +414,6 @@ public class ResourceUI {
 
 				resource.getIconGroups().forEach(group -> {
 					group.getIcons().stream().forEach(icon -> {
-						
 						String path = target.getAbsolutePath();
 						path = path.replaceAll("\\{f\\}", currentFile.getName());
 						path = path.replaceAll("\\{r\\}", String.valueOf(group.getResourceName()));
@@ -388,42 +487,85 @@ public class ResourceUI {
 			JOptionPane.showMessageDialog(frmIconExplorer, String.format("%s doesn't exist.", file.getAbsoluteFile()), "File open error", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
+		
 		frmIconExplorer.setTitle(String.format(TITLE, file.getName()));
 		recentFiles.remove(file);
 		recentFiles.add(file);
 		panel.removeAll();
 		cl_statuspanel.show(statuspanel, "progress");
 		scrollPane.setViewportView(panel);
-		Set<Short> widths = new HashSet<>();
-		Set<Short> bpps = new HashSet<>();
-		
 		new Thread(() -> {
 			AtomicInteger counter = new AtomicInteger(0);
 			try {
+				panelPreview.removeAll();
+				panelPreview.invalidate();
+				panelPreview.repaint();
 				NativeIconResource resource = new NativeIconResource(file);
 				addRecentFile(file);
 				menuItemExport.setEnabled(true);
-				labelStatusBar.setIcon(new ImageIcon(Util.getShellIcon(file.getName().substring(file.getName().lastIndexOf('.')))));
+				//labelStatusBar.setIcon(new ImageIcon(Util.getShellIcon(file.getName().substring(file.getName().lastIndexOf('.')))));
+				labelStatusBar.setIcon(ICONS_FILE);
 				currentFile = file;
 				progressBar.setMaximum(resource.size());
 				labelStatusBar.setText(file.getName());
 				labelStatusRight.setText(resource.size() + " icons");
+				MultiResolutionImageToolkit toolkit = new MultiResolutionImageToolkit(resource);
 				resource.getIconGroups().forEach(group -> {
-					IconGroupUI p = new IconGroupUI(resource);
-					p.setTitle(String.valueOf(group.getResourceName()));
+					IconGroupUI iconGroupPanel = new IconGroupUI();
+					iconGroupPanel.setTitle(String.valueOf(group.getResourceName()));
+					Image[] images = toolkit.getImages(group);
 					group.getIcons().forEach(i -> {
 						try {
-							p.addElement(i);
-							widths.add(i.getWidth());
-							bpps.add(i.getBitCount());
+							iconGroupPanel.addElement(i, new ImageIcon(resource.getImage(i)));
 						} catch (Exception e) {
-							System.out.println(i);
-							throw e;
+							JLabel errorLabel = new JLabel(e.getMessage());
+							errorLabel.setForeground(Color.RED);
+							iconGroupPanel.add(errorLabel);
 						}
 					});
-					p.setAlignmentX(Component.LEFT_ALIGNMENT);
+					iconGroupPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+					
+					//ImageIcon imicon = new ImageIcon(resource.getImage(icon));
+					VariantImageIcon imageIcon = new VariantImageIcon(new BaseMultiResolutionImage(images), 32, 32);
+					panelPreview.setLayout(new BoxLayout(panelPreview, BoxLayout.Y_AXIS));
+					JLabel label = new JLabel(group.getResourceName(), imageIcon, JLabel.CENTER);
+					label.setName("group text");
+					label.setVerticalTextPosition(JLabel.BOTTOM);
+					label.setHorizontalTextPosition(JLabel.CENTER);
+					
+					Dimension size = label.getMaximumSize();
+					label.setMaximumSize(new Dimension(Integer.MAX_VALUE, (int) (size.height*1.5)));
+					size = label.getSize();
+					label.setPreferredSize(new Dimension(size.width, 50));
+					label.setSize(new Dimension(size.width, 50));
+					panelPreview.add(label);
+					label.addMouseListener(new MouseAdapter() {
+						Color old;
+						Color oldForeground;
+						@Override
+						public void mouseEntered(MouseEvent e) {
+							old = label.getBackground();
+							oldForeground = label.getForeground();
+							label.setOpaque(true);
+							label.setBackground(new Color(0x0, 0x78, 0xD7));
+							label.setForeground(Color.WHITE);
+						}
+						@Override
+						public void mouseExited(MouseEvent e) {
+							label.setOpaque(false);
+							label.setBackground(old);
+							label.setForeground(oldForeground);
+						}
+						
+						@Override
+						public void mouseClicked(MouseEvent e) {
+							panel.scrollRectToVisible(iconGroupPanel.getBounds());
+						}
+					});
+					
+					
 					SwingUtilities.invokeLater(() -> {
-						panel.add(p);
+						panel.add(iconGroupPanel);
 						progressBar.setValue(counter.incrementAndGet());
 					});
 				});
@@ -434,6 +576,7 @@ public class ResourceUI {
 				scrollPane.revalidate();
 				scrollPane.repaint();
 				cl_statuspanel.show(statuspanel, "status");
+				tree.setModel(treeModel);
 			});
 		}).start();
 			
@@ -444,6 +587,10 @@ public class ResourceUI {
 			scrollPane.setViewportView(table);
 			return;
 		}
+		frmIconExplorer.setTitle(String.format(TITLE, folder.getName()));
+		panelPreview.removeAll();
+		panelPreview.invalidate();
+		panelPreview.repaint();
 		addRecentFile(folder);
 		int rowCount = tableModel.getRowCount();
 		for (int i = rowCount - 1; i >= 0; i--) {
@@ -452,7 +599,7 @@ public class ResourceUI {
 		scrollPane.setViewportView(table);
 		cl_statuspanel.show(statuspanel, "progress");
 		labelStatusBar.setText(folder.getAbsolutePath());
-		labelStatusBar.setIcon(new ImageIcon(FOLDER_ICON));
+		labelStatusBar.setIcon(ICONS_FOLDER);
 		progressBar.setValue(0);
 		currentDiscoveryFolder = folder;
 		new Thread(() -> {
@@ -491,12 +638,15 @@ public class ResourceUI {
 	
 	private void addRecentFile(File file) {
 		recentFiles.remove(file);
-		recentFiles.add(file);
+		recentFiles.offerFirst(file);
+		if (recentFiles.size() > 10) {
+			recentFiles.removeLast();
+		}
 		
 		mnRecents.removeAll();
-		for (int i = recentFiles.size() - 1; i >= 0; i--) {
-			File f = recentFiles.get(i);
+		recentFiles.forEach(f -> {
 			JMenuItem item = new JMenuItem(f.getName());
+			item.setIcon(f.isFile() ? ICONS_FILE : ICONS_FOLDER);
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					Optional<File> recentFile = recentFiles.stream().filter(f -> f.getName().equals(item.getText())).findFirst();
@@ -511,6 +661,6 @@ public class ResourceUI {
 				}
 			});
 			mnRecents.add(item);
-		};
+		});
 	}
 }

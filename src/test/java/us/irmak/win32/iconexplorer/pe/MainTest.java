@@ -50,7 +50,7 @@ public class MainTest {
 	
 	@Test
 	public void testDll() throws IOException {
-		File file = new File("c:\\Windows\\system32\\user32.dll");
+		File file = new File("c:\\Windows\\SystemResources\\imageres.dll.mun");
 		if (file.exists()) {
 			NativeIconResource resource = new NativeIconResource(file);
 			resource.getIconGroups().stream().forEach(group -> {
@@ -61,9 +61,9 @@ public class MainTest {
 					BufferedImage image = resource.getImage(icon);
 					try {
 						if (image != null) {
-							ImageIO.write(image, "png", new File(String.format("C:\\Temp\\file-%s-%dx%d-%dbpp.png", group.getResourceName(), icon.getWidth(), icon.getHeight(), icon.getBitCount())));
+							//ImageIO.write(image, "png", new File(String.format("C:\\Temp\\file-%s-%dx%d-%dbpp.png", group.getResourceName(), icon.getWidth(), icon.getHeight(), icon.getBitCount())));
 						}
-					} catch (IOException e) {
+					} catch (Exception e) {
 						System.out.println(group.getResourceName());
 						e.printStackTrace();
 					}
