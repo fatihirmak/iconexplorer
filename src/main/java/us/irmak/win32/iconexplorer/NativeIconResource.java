@@ -100,7 +100,7 @@ public class NativeIconResource extends IconResource {
 			fis.read(bytes);
 			return bytes[0] == 'M' && bytes[1] == 'Z';
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.err.format("Can't read: %s.\n", file.getAbsolutePath());
 			return false;
 		}
 	}

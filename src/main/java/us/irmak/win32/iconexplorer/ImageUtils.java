@@ -94,7 +94,7 @@ class ImageUtils {
 			int height = bitmapInfo.bmiHeader.biHeight;
 			int imageSize = bitmapInfo.bmiHeader.biSizeImage;
 			//bitCount = bitmapInfo.bmiHeader.biBitCount;
-			System.out.println(width + "x" + height+" -- " + imageSize);
+
 			Memory pixels = getBitmapData(hdc, bitmapHandle, bitmapInfo);
 			BufferedImage image = null;
 			if (bitCount == 32) {
@@ -133,7 +133,7 @@ class ImageUtils {
 		        WinGDI.DIB_RGB_COLORS) == 0)
 		    throw new RuntimeException("GetDIBits failed to retrieve info with error: " + Kernel32Util.formatMessage(kernel32.GetLastError()));
 
-		bitmapInfo.read();
+		//bitmapInfo.read();
 		return bitmapInfo;
 	}
     

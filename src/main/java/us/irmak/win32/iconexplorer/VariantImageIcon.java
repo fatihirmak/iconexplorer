@@ -6,6 +6,7 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BaseMultiResolutionImage;
+import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,7 +25,7 @@ public class VariantImageIcon extends ImageIcon {
 	int height;
 	
 	public VariantImageIcon(BaseMultiResolutionImage image, int width, int height) {
-		super();
+		super(image);
 		scaledInstances = new HashMap<>();
 		this.image = image;
 		this.width = width;
@@ -63,6 +64,17 @@ public class VariantImageIcon extends ImageIcon {
 		}
 	}
 	
+	public static BufferedImage convertToBufferedImage(Image image)
+	{
+	    BufferedImage newImage = new BufferedImage(
+	        image.getWidth(null), image.getHeight(null),
+	        BufferedImage.TYPE_INT_ARGB);
+	    Graphics2D g = newImage.createGraphics();
+	    g.drawImage(image, 0, 0, null);
+	    g.dispose();
+	    return newImage;
+	}
+	
 	@Override
 	public synchronized void paintIcon(Component c, Graphics g, int x, int y) {
 		final Graphics2D gr = (Graphics2D) g;
@@ -74,7 +86,7 @@ public class VariantImageIcon extends ImageIcon {
 		final int w = (int) Math.floor(getIconWidth() * scalingX);
 		final int h = (int) Math.floor(getIconHeight() * scalingY);
 
-		x = (int) Math.floor(x* scalingX);
+		x = (int) Math.floor(x * scalingX);
 		y = (int) Math.floor(y * scalingY);
 		
 		Image bestSize = getScaledInstance(w, h);

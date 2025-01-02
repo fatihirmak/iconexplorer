@@ -6,7 +6,6 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
-import java.awt.Font;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
@@ -60,6 +59,8 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+
+import com.formdev.flatlaf.FlatDarkLaf;
 
 import us.irmak.win32.iconexplorer.jna.Shlwapi;
 
@@ -136,7 +137,8 @@ public class ResourceUI {
 						ICONS_APP = Arrays.asList(toolkit.getImages(gr, 32));
 					});
 					
-					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+					//UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+					UIManager.setLookAndFeel(new FlatDarkLaf());
 					
 					GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 			        GraphicsDevice gd = ge.getDefaultScreenDevice();
@@ -145,15 +147,10 @@ public class ResourceUI {
 			        UIManager.getDefaults().keySet().stream()
 			        	.filter(key -> key instanceof String)
 			        	.map(key -> (String) key)
-			        	.filter(key -> key.endsWith(".font") && !key.contains("Menu")).forEach(key -> {
+			        	.sorted()
+			        	.forEach(key -> {
 			        	Object value = UIManager.getDefaults().get(key);
-			        	System.out.println(key);
-			        	if (value instanceof Font) {
-			        		Font font = (Font) value;
-			        		System.out.println(key + "=>" + font.getSize());
-			        		Font newFont = new Font(font.getName(), font.getStyle(), (int) (font.getSize() * scale));
-			        		//UIManager.getDefaults().put(key, newFont);
-			        	}
+			        	System.out.println(key + "=>" + value);
 			        });
 			        
 					ResourceUI window = new ResourceUI();
@@ -280,7 +277,6 @@ public class ResourceUI {
 		mnRecents = new JMenu("Recent Files");
 		menuBar.add(mnRecents);
 		
-		
 		JPanel statusBar = new JPanel();
 		statusBar.setBorder(new EmptyBorder(4, 4, 4, 4));
 		frmIconExplorer.getContentPane().add(statusBar, BorderLayout.SOUTH);
@@ -335,7 +331,7 @@ public class ResourceUI {
 		splitPane.setLeftComponent(treeScrollPane);
 		
 		panelPreview = new JPanel();
-		panelPreview.setBackground(Color.WHITE);
+		panelPreview.setBackground(UIManager.getColor("window"));
 		treeScrollPane.setViewportView(panelPreview);
 		
 		table = new JTable();

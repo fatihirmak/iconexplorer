@@ -1,13 +1,19 @@
 package us.irmak.win32.iconexplorer;
 
+import static us.irmak.win32.iconexplorer.jna.Shell32Extension.SHGFI_DISPLAYNAME;
 import static us.irmak.win32.iconexplorer.jna.Shell32Extension.SHGFI_ICON;
+import static us.irmak.win32.iconexplorer.jna.Shell32Extension.SHGFI_ICONLOCATION;
+import static us.irmak.win32.iconexplorer.jna.Shell32Extension.SHGFI_LARGEICON;
+import static us.irmak.win32.iconexplorer.jna.Shell32Extension.SHGFI_PIDL;
 import static us.irmak.win32.iconexplorer.jna.Shell32Extension.SHGFI_SMALLICON;
 import static us.irmak.win32.iconexplorer.jna.Shell32Extension.SHGFI_USEFILEATTRIBUTES;
 
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.Optional;
 
 import com.sun.jna.Memory;
+import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.GDI32;
 import com.sun.jna.platform.win32.Kernel32;
@@ -103,12 +109,34 @@ class Util {
 		return getShellIcon(true, null);
 	}
 	
+	public static Pointer toNativeString(String str) {
+		Memory pointer = new Memory(Native.WCHAR_SIZE * str.length() + 2);
+		pointer.setWideString(0, str);
+		return pointer;
+	}
+	
 	private static BufferedImage getShellIcon(boolean isFolder, String extension) {
 		SHFILEINFO fileInfo = new SHFILEINFO();
-		shell32.SHGetFileInfo("filename."+extension, isFolder ? WinNT.FILE_ATTRIBUTE_DIRECTORY : WinNT.FILE_ATTRIBUTE_NORMAL, 
+		shell32.SHGetFileInfo(toNativeString("filename."+extension), isFolder ? WinNT.FILE_ATTRIBUTE_DIRECTORY : WinNT.FILE_ATTRIBUTE_NORMAL, 
 				fileInfo, fileInfo.size(), 
-				SHGFI_USEFILEATTRIBUTES | SHGFI_ICON | SHGFI_SMALLICON);
+				SHGFI_USEFILEATTRIBUTES | SHGFI_ICON | SHGFI_LARGEICON);
 
+		return getImage(fileInfo.hIcon);
+	}
+	
+	public static BufferedImage getShellIcon(File file) {
+		SHFILEINFO fileInfo = new SHFILEINFO();
+		shell32.SHGetFileInfo(toNativeString(file.getAbsolutePath()), 0, 
+				fileInfo, fileInfo.size(), 
+				SHGFI_ICON | SHGFI_SMALLICON | SHGFI_ICONLOCATION);
+		return getImage(fileInfo.hIcon);
+	}
+	
+	public static BufferedImage getShellIcon(Pointer pointer) {
+		SHFILEINFO fileInfo = new SHFILEINFO();
+		shell32.SHGetFileInfo(pointer, 0, 
+				fileInfo, fileInfo.size(), 
+				SHGFI_ICON | SHGFI_LARGEICON | SHGFI_PIDL | SHGFI_DISPLAYNAME);
 		return getImage(fileInfo.hIcon);
 	}
 	

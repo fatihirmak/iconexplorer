@@ -20,4 +20,8 @@ public abstract class IconResource {
 	public abstract List<IconGroup> getIconGroups();
 	
 	public abstract BufferedImage getImage(Icon icon);
+	
+	public File getResourceFile() {
+		return resourceFile;
+	}
 }
